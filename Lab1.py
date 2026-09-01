@@ -4,10 +4,15 @@ from openai import OpenAI
 st.title("📄 Lab 1: Document Question Answering")
 st.write(
     "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys)."
+    "To use this app, you need to provide an OpenAI API key."
 )
 
-openai_api_key = st.text_input("OpenAI API Key", type="password")
+# Use secret key if available, otherwise prompt for text input
+if "OPENAI_API_KEY" in st.secrets:
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+else:
+    openai_api_key = st.text_input("OpenAI API Key", type="password")
+
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
@@ -28,7 +33,7 @@ else:
             }
         ]
         stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=messages,
             stream=True,
         )
