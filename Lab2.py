@@ -1,59 +1,61 @@
 import streamlit as st
 from openai import OpenAI
-import pypdf
 
 st.title("📄 Lab 2: Document Summarizer")
+st.write("Upload a document below to get an automated summary based on your selected settings.")
 
-# Secure API key from Streamlit secrets
-api_key = st.secrets["OPENAI_API_KEY"]
-client = OpenAI(api_key=api_key)
+# Part B: Retrieve key strictly via Streamlit secrets
+if "OPENAI_API_KEY" in st.secrets:
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+else:
+    st.error("OpenAI API Key not found in secrets. Please configure .streamlit/secrets.toml", icon="🚨")
+    st.stop()
 
-# Sidebar Options
-st.sidebar.header("Summary Settings")
+# Part C: Sidebar Options
+st.sidebar.title("Summary Settings")
+
+# Dropdown 1: Language selection
 language = st.sidebar.selectbox(
     "Select Language",
-    ["English", "Spanish", "French", "German", "Chinese"]
+    ["English", "Spanish", "French", "German", "Chinese", "Japanese"]
 )
 
+# Dropdown 2: Summary type selection
 summary_type = st.sidebar.selectbox(
     "Select Summary Type",
     [
         "Summarize the document in 100 words",
         "Summarize the document in 2 connecting paragraphs",
-        "Summarize the document in 5 bullet points"
+        "Summarize the document in 5 bullet points",
     ]
 )
 
+# Model selection checkbox
 use_advanced = st.sidebar.checkbox("Use advanced model")
-model_choice = "gpt-4o" if use_advanced else "gpt-4o-mini"
+selected_model = "gpt-4o" if use_advanced else "gpt-4o-mini"
 
-# File Uploader
-uploaded_file = st.file_uploader("Upload a PDF document", type=["pdf"])
+# Main App Body
+client = OpenAI(api_key=openai_api_key)
+uploaded_file = st.file_uploader("Upload a document (.txt or .md)", type=("txt", "md"))
 
-if uploaded_file is not None:
-    # Extract text from PDF
-    pdf_reader = pypdf.PdfReader(uploaded_file)
-    extracted_text = ""
-    for page in pdf_reader.pages:
-        text = page.extract_text()
-        if text:
-            extracted_text += text
-
+if uploaded_file:
+    document = uploaded_file.read().decode()
+    
     if st.button("Generate Summary"):
-        if not extracted_text.strip():
-            st.error("No text could be extracted from this PDF.")
-        else:
-            prompt = (
-                f"Language: {language}\n"
-                f"Task: {summary_type}\n\n"
-                f"Document Content:\n{extracted_text}"
-            )
-            
-            with st.spinner("Generating summary..."):
-                response = client.chat.completions.create(
-                    model=model_choice,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                
-                st.subheader("Summary")
-                st.write(response.choices[0].message.content)
+        messages = [
+            {
+                "role": "system",
+                "content": f"You are a helpful assistant. {summary_type}. Please write your response in {language}."
+            },
+            {
+                "role": "user",
+                "content": f"Here is the document to summarize:\n\n{document}",
+            }
+        ]
+        
+        stream = client.chat.completions.create(
+            model=selected_model,
+            messages=messages,
+            stream=True,
+        )
+        st.write_stream(stream)
