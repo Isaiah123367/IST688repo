@@ -1,7 +1,9 @@
 import streamlit as st
 
-lab1_page = st.Page("Lab1.py", title="Lab 1", icon="1️⃣")
-lab2_page = st.Page("Lab2.py", title="Lab 2 - Document Summarizer", icon="2️⃣", default=True)
+st.set_page_config(page_title="HW Manager", page_icon="🗂️")
 
-pg = st.navigation([lab1_page, lab2_page])
+hw1_page = st.Page("HW/HW1.py", title="HW 1", icon="1️⃣")
+hw2_page = st.Page("HW/HW2.py", title="HW 2 - URL Summarizer", icon="2️⃣", default=True)
+
+pg = st.navigation([hw1_page, hw2_page])
 pg.run()
