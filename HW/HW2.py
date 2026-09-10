@@ -7,7 +7,7 @@ import anthropic
 
 def read_url_content(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for HTTP errors
         soup = BeautifulSoup(response.content, 'html.parser')
         return soup.get_text()
@@ -19,30 +19,21 @@ def read_url_content(url):
 st.title("🌐 HW 2: URL Summarizer (Multiple LLMs)")
 st.write("Enter a URL below to get an automated summary based on your selected settings.")
 
-# Part B: Retrieve keys strictly via Streamlit secrets
-if "OPENAI_API_KEY" in st.secrets:
-    openai_api_key = st.secrets["OPENAI_API_KEY"]
-else:
-    openai_api_key = None
-
-if "ANTHROPIC_API_KEY" in st.secrets:
-    anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"]
-else:
-    anthropic_api_key = None
+# Retrieve keys strictly via Streamlit secrets (no key text inputs)
+openai_api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else None
+anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"] if "ANTHROPIC_API_KEY" in st.secrets else None
 
 # URL input goes at the top of the screen (not the sidebar)
 url = st.text_input("Enter a URL")
 
-# Part C: Sidebar Options
+# Sidebar: Summary Settings
 st.sidebar.title("Summary Settings")
 
-# Dropdown 1: Language selection
 language = st.sidebar.selectbox(
     "Select Language",
     ["English", "Spanish", "French", "German", "Chinese", "Japanese"]
 )
 
-# Dropdown 2: Summary type selection
 summary_type = st.sidebar.selectbox(
     "Select Summary Type",
     [
@@ -52,14 +43,13 @@ summary_type = st.sidebar.selectbox(
     ]
 )
 
-# LLM provider selection
+# Sidebar: LLM Settings
 st.sidebar.title("LLM Settings")
 llm_provider = st.sidebar.selectbox(
     "Select LLM Provider",
     ["OpenAI", "Claude (Anthropic)"]
 )
 
-# Model selection checkbox
 use_advanced = st.sidebar.checkbox("Use advanced model")
 
 if llm_provider == "OpenAI":
@@ -69,7 +59,7 @@ else:
 
 st.sidebar.caption(f"Using: {llm_provider} — `{selected_model}`")
 
-# Make sure we have a valid key for the selected provider
+# Validate that we have a key for the selected provider before allowing a run
 if llm_provider == "OpenAI" and not openai_api_key:
     st.error("OpenAI API Key not found in secrets. Please configure .streamlit/secrets.toml", icon="🚨")
     st.stop()
@@ -80,12 +70,16 @@ elif llm_provider == "Claude (Anthropic)" and not anthropic_api_key:
 # Main App Body
 if url:
     if st.button("Generate Summary"):
-        document = read_url_content(url)
+        with st.spinner("Reading URL content..."):
+            document = read_url_content(url)
 
         if not document:
             st.error("Could not read content from that URL. Please check the link and try again.")
         else:
-            system_prompt = f"You are a helpful assistant. {summary_type}. Please write your response in {language}."
+            system_prompt = (
+                f"You are a helpful assistant. {summary_type}. "
+                f"Please write your response in {language}."
+            )
 
             if llm_provider == "OpenAI":
                 client = OpenAI(api_key=openai_api_key)
