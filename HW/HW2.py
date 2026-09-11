@@ -4,8 +4,8 @@ import streamlit as st
 from openai import OpenAI
 import anthropic
 
-
 def read_url_content(url):
+    """Fetch a URL and return its readable text content."""
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -15,15 +15,14 @@ def read_url_content(url):
         print(f"Error reading {url}: {e}")
         return None
 
-
 st.title("🌐 HW 2: URL Summarizer (Multiple LLMs)")
 st.write("Enter a URL below to get an automated summary based on your selected settings.")
 
-# Retrieve keys strictly via Streamlit secrets (no key text inputs)
+# Retrieve keys strictly via Streamlit secrets
 openai_api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else None
 anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"] if "ANTHROPIC_API_KEY" in st.secrets else None
 
-# URL input goes at the top of the screen (not the sidebar)
+# URL input goes at the top of the screen
 url = st.text_input("Enter a URL")
 
 # Sidebar: Summary Settings
@@ -95,7 +94,7 @@ if url:
                     )
                     st.write_stream(stream)
                 except Exception as e:
-                    st.error(f"OpenAI request failed. Please check that your API key is valid. ({e})")
+                    st.error(f"OpenAI request failed. Please check your API key and model name. ({e})")
 
             else:  # Claude (Anthropic)
                 client = anthropic.Anthropic(api_key=anthropic_api_key)
@@ -114,4 +113,4 @@ if url:
 
                     st.write_stream(claude_stream())
                 except Exception as e:
-                    st.error(f"Claude request failed. Please check that your API key is valid. ({e})")
+                    st.error(f"Claude request failed. Please check your API key and model name. ({e})")
