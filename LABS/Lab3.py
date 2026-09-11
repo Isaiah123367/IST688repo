@@ -1,5 +1,4 @@
 """
-"""
 IST 688 - Lab 3: Streaming Chatbot with Memory
 """
 
@@ -15,19 +14,17 @@ from anthropic import Anthropic
 st.set_page_config(page_title="Lab 3 - Chatbot with Memory", page_icon="🌐")
 st.title("🌐 Lab 3 - Streaming Chatbot with Memory")
 
+# Using explicit string concatenation here to prevent syntax errors on copy/paste
 st.write(
-    """
-**How this chatbot works**
-
-- Paste up to **two URLs** in the sidebar. Their text is scraped with
-  `read_url_content()` and dropped into a **system prompt that is never
-  discarded**.
-- Pick which **LLM vendor** answers your questions.
-- Responses **stream** back token-by-token as they're generated.
-- **Conversation memory:** this app keeps a rolling **buffer of the last
-  4 messages (2 user/assistant exchanges)**. Anything older than that
-  scrolls out of the buffer to bound token usage.
-"""
+    "**How this chatbot works**\n\n"
+    "- Paste up to **two URLs** in the sidebar. Their text is scraped with "
+    "`read_url_content()` and dropped into a **system prompt that is never "
+    "discarded**.\n"
+    "- Pick which **LLM vendor** answers your questions.\n"
+    "- Responses **stream** back token-by-token as they're generated.\n"
+    "- **Conversation memory:** this app keeps a rolling **buffer of the last "
+    "4 messages (2 user/assistant exchanges)**. Anything older than that "
+    "scrolls out of the buffer to bound token usage."
 )
 
 # --------------------------------------------------------------------------
@@ -62,28 +59,32 @@ def read_url_content(url: str) -> str:
 def build_system_prompt(url1: str, url2: str, content1: str, content2: str) -> str:
     """Build the persistent system prompt containing URL content and persona rules."""
     parts = [
-        "You are a helpful assistant who answers questions using the "
-        "reference material provided below when it's relevant. If the "
-        "answer isn't in the material, say so and answer from your own "
-        "knowledge, making clear you're doing so.\n\n"
-        "CRITICAL INSTRUCTIONS:\n"
-        "1. You must give answers such that someone who is 10 years old can understand them.\n"
-        "2. After you answer a question, you must always ask: 'Do you want more info?'\n"
-        "3. If the user replies 'Yes', you must provide more information and then ask again, 'Do you want more info?'\n"
+        "You are a helpful assistant who answers questions using the ",
+        "reference material provided below when it's relevant. If the ",
+        "answer isn't in the material, say so and answer from your own ",
+        "knowledge, making clear you're doing so.\n\n",
+        "CRITICAL INSTRUCTIONS:\n",
+        "1. You must give answers such that someone who is 10 years old can understand them.\n",
+        "2. After you answer a question, you must always ask: 'Do you want more info?'\n",
+        "3. If the user replies 'Yes', you must provide more information and then ask again, 'Do you want more info?'\n",
         "4. If the user replies 'No', you must go back to asking what you can help with."
     ]
+    prompt_base = "".join(parts)
+    
+    final_parts = [prompt_base]
     if content1:
-        parts.append(f"\n--- CONTENT FROM URL 1 ({url1}) ---\n{content1[:8000]}")
+        final_parts.append(f"\n--- CONTENT FROM URL 1 ({url1}) ---\n{content1[:8000]}")
     if content2:
-        parts.append(f"\n--- CONTENT FROM URL 2 ({url2}) ---\n{content2[:8000]}")
+        final_parts.append(f"\n--- CONTENT FROM URL 2 ({url2}) ---\n{content2[:8000]}")
     if not content1 and not content2:
-        parts.append("\n(No URL content was provided.)")
-    return "\n".join(parts)
+        final_parts.append("\n(No URL content was provided.)")
+        
+    return "".join(final_parts)
 
 
 def get_buffered_history(messages: list) -> list:
     """Return just the most recent MEMORY_BUFFER_SIZE messages (buffer memory)."""
-    return messages[-MEMORY_BUFFER_SIZE:]
+    return messages[-MEMORY_BUFFER_SIZE:] if len(messages) > 0 else []
 
 
 def stream_openai(system_prompt: str, history: list, model: str):
