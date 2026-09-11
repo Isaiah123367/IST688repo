@@ -1,20 +1,6 @@
 """
-IST 688 - HW3: A Streaming Chatbot that Discusses a URL (or two)
-
-Run with:  streamlit run HW3.py
-
-Required secrets (in .streamlit/secrets.toml or the Streamlit Cloud
-"Secrets" settings):
-
-    OPENAI_API_KEY = "sk-..."
-    ANTHROPIC_API_KEY = "sk-ant-..."
-
-Required packages (add to requirements.txt):
-    streamlit
-    openai
-    anthropic
-    requests
-    beautifulsoup4
+"""
+IST 688 - Lab 3: Streaming Chatbot with Memory
 """
 
 import requests
@@ -26,8 +12,8 @@ from anthropic import Anthropic
 # --------------------------------------------------------------------------
 # Page setup
 # --------------------------------------------------------------------------
-st.set_page_config(page_title="HW3 - URL Chatbot", page_icon="🌐")
-st.title("🌐 HW3 - Chat About a URL (or Two)")
+st.set_page_config(page_title="Lab 3 - Chatbot with Memory", page_icon="🌐")
+st.title("🌐 Lab 3 - Streaming Chatbot with Memory")
 
 st.write(
     """
@@ -35,18 +21,12 @@ st.write(
 
 - Paste up to **two URLs** in the sidebar. Their text is scraped with
   `read_url_content()` and dropped into a **system prompt that is never
-  discarded** — so the model always has that context available, no matter
-  how long the conversation gets.
-- Pick which **LLM vendor** answers your questions. You can compare
-  **OpenAI's GPT-5** against **Anthropic's Claude Opus 4.5** (each
-  vendor's current flagship/premium model).
+  discarded**.
+- Pick which **LLM vendor** answers your questions.
 - Responses **stream** back token-by-token as they're generated.
 - **Conversation memory:** this app keeps a rolling **buffer of the last
-  6 messages (3 user/assistant exchanges)**. Anything older than that
-  scrolls out of the buffer and is no longer sent to the model — only the
-  system prompt (with the URL content) and the most recent 6 messages are
-  sent on every turn. This keeps token usage bounded while still letting
-  the bot "remember" recent back-and-forth.
+  4 messages (2 user/assistant exchanges)**. Anything older than that
+  scrolls out of the buffer to bound token usage.
 """
 )
 
@@ -54,16 +34,15 @@ st.write(
 # Helpers
 # --------------------------------------------------------------------------
 
-MEMORY_BUFFER_SIZE = 6  # last 6 messages = 3 user/assistant exchanges
-
+MEMORY_BUFFER_SIZE = 4  # last 4 messages = 2 user/assistant exchanges
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def read_url_content(url: str) -> str:
-    """Fetch a URL and return its readable text content (re-used from HW2)."""
+    """Fetch a URL and return its readable text content."""
     if not url:
         return ""
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (HW3 URL Chatbot)"}
+        headers = {"User-Agent": "Mozilla/5.0 (Lab3 URL Chatbot)"}
         resp = requests.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -81,12 +60,17 @@ def read_url_content(url: str) -> str:
 
 
 def build_system_prompt(url1: str, url2: str, content1: str, content2: str) -> str:
-    """Build the persistent system prompt containing whatever URL content exists."""
+    """Build the persistent system prompt containing URL content and persona rules."""
     parts = [
         "You are a helpful assistant who answers questions using the "
         "reference material provided below when it's relevant. If the "
         "answer isn't in the material, say so and answer from your own "
-        "knowledge, making clear you're doing so."
+        "knowledge, making clear you're doing so.\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "1. You must give answers such that someone who is 10 years old can understand them.\n"
+        "2. After you answer a question, you must always ask: 'Do you want more info?'\n"
+        "3. If the user replies 'Yes', you must provide more information and then ask again, 'Do you want more info?'\n"
+        "4. If the user replies 'No', you must go back to asking what you can help with."
     ]
     if content1:
         parts.append(f"\n--- CONTENT FROM URL 1 ({url1}) ---\n{content1[:8000]}")
@@ -118,7 +102,6 @@ def stream_openai(system_prompt: str, history: list, model: str):
 
 def stream_anthropic(system_prompt: str, history: list, model: str):
     client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-    # Anthropic wants system separate from the messages list
     with client.messages.stream(
         model=model,
         max_tokens=1024,
@@ -144,8 +127,8 @@ with st.sidebar:
     )
 
     st.caption(
-        "Memory: rolling buffer of the last 6 messages "
-        "(3 user/assistant exchanges)."
+        "Memory: rolling buffer of the last 4 messages "
+        "(2 user/assistant exchanges)."
     )
 
     if st.button("🔄 Reset conversation"):
