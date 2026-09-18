@@ -3,4 +3,6 @@ openai
 anthropic
 requests
 beautifulsoup4
+chromadb
 pypdf
+pysqlite3-binary
