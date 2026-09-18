@@ -70,7 +70,25 @@ st.write(
 # --------------------------------------------------------------------------
 # Config
 # --------------------------------------------------------------------------
-LAB4_DATA_DIR = "Lab4_data"
+# The app runs from the repo root (streamlit_app.py), but this page lives in
+# LABS/, so try every plausible location for the syllabus PDFs rather than
+# assuming one exact path/name.
+LAB4_DATA_DIR_CANDIDATES = [
+    "LABS/Lab4_data",
+    "LABS/Lab-04-Data",
+    "Lab4_data",
+    "Lab-04-Data",
+]
+
+def resolve_lab4_data_dir() -> str:
+    for candidate in LAB4_DATA_DIR_CANDIDATES:
+        if glob.glob(os.path.join(candidate, "*.pdf")):
+            return candidate
+    # Nothing matched - return the first candidate so the error message
+    # below is at least informative about where we looked.
+    return LAB4_DATA_DIR_CANDIDATES[0]
+
+LAB4_DATA_DIR = resolve_lab4_data_dir()
 COLLECTION_NAME = "Lab4Collection"
 EMBEDDING_MODEL = "text-embedding-3-small"
 CHAT_MODEL = "gpt-5-mini"
@@ -120,9 +138,11 @@ def build_lab4_vectordb():
     pdf_paths = sorted(glob.glob(os.path.join(LAB4_DATA_DIR, "*.pdf")))
 
     if not pdf_paths:
+        checked = ", ".join(f"'{c}/'" for c in LAB4_DATA_DIR_CANDIDATES)
         st.error(
-            f"No PDF files found in '{LAB4_DATA_DIR}/'. Create that folder "
-            "next to Lab4.py and add the 7 syllabus PDFs to it."
+            f"No PDF files found. Checked: {checked}. Create one of these "
+            "folders (relative to the repo root, since that's where "
+            "streamlit_app.py runs from) and add the 7 syllabus PDFs to it."
         )
         return collection
 
