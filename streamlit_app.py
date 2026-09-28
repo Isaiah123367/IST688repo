@@ -6,7 +6,8 @@ import streamlit as st
 hw1 = st.Page("HW/HW1.py", title="HW 1", icon="1️⃣")
 hw2 = st.Page("HW/HW2.py", title="HW 2 - URL Summarizer", icon="2️⃣")
 hw3 = st.Page("HW/HW3.py", title="HW 3 - Streaming URL Chatbot", icon="3️⃣")
-hw4 = st.Page("HW/HW4.py", title="HW 4 - iSchool RAG Chatbot", icon="4️⃣", default=True)
+hw4 = st.Page("HW/HW4.py", title="HW 4 - iSchool RAG Chatbot", icon="4️⃣")
+hw5 = st.Page("HW/HW5.py", title="HW 5 - Enhanced Chatbot (Tool Calling)", icon="5️⃣", default=True)
 
 lab1 = st.Page("LABS/Lab1.py", title="Lab 1", icon="1️⃣")
 lab2 = st.Page("LABS/Lab2.py", title="Lab 2 - Document Summarizer", icon="2️⃣")
@@ -17,10 +18,9 @@ lab5 = st.Page("LABS/Lab5.py", title="Lab 5 - What to Wear Bot", icon="5️⃣")
 # --- Navigation ---
 pg = st.navigation(
     {
-        "HW": [hw1, hw2, hw3, hw4],
+        "HW": [hw1, hw2, hw3, hw4, hw5],
         "Labs": [lab1, lab2, lab3, lab4, lab5],
     }
 )
 
 pg.run()
- 
