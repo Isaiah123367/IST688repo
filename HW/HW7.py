@@ -524,7 +524,10 @@ def main():
     import streamlit as st
     from openai import OpenAI
 
-    st.set_page_config(page_title="Client News Monitor", page_icon="📰")
+    try:                                    # may already be set by the st.navigation entrypoint
+        st.set_page_config(page_title="Client News Monitor", page_icon="📰")
+    except Exception:
+        pass
     st.title("📰 Client News Monitor")
     st.caption("Ask about the news on our clients. Try: *Find the most interesting news* · "
                "*Find news about Microsoft* · *Any antitrust or regulatory news?*")
@@ -543,8 +546,13 @@ def main():
         client = chromadb.PersistentClient(path=DB_PATH)
         try:
             col = client.get_collection(COLLECTION, embedding_function=ef)
-        except Exception:                       # first run on a fresh deploy
-            col = build_db(ef, client=client)
+        except Exception:
+            col = None
+        if col is None or col.count() == 0:     # missing/empty DB on a fresh deploy: rebuild
+            if not os.path.exists(CSV_PATH):
+                st.error(f"Could not find {CSV_PATH}. Add news.csv to the repo root.")
+                st.stop()
+            col = build_db(ef, client=client, csv_path=CSV_PATH)
         return NewsStore(col)
 
     store = load_store(api_key)
