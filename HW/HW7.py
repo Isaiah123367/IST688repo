@@ -478,10 +478,22 @@ turmoil, restructuring, IP/AI policy. Routine marketing, product-feature, sports
 is NOT interesting. Use the interest_score and signals as evidence, but apply judgment and \
 re-order if the score misleads. Skip articles that are not really about the client \
 (e.g. a person who shares a company's name).
+- Rank legal/regulatory events (rulings, lawsuits, government probes, settlements, merger \
+approvals, tax disputes) above market-wide stock moves, earnings, or product news. Cover the \
+different companies and event types rather than several items on one theme; items with \
+outlets_covering_story > 1 are bigger stories, so say so.
+- In CONTEXT, state only what the summary or signals support. Do not speculate about \
+consequences (e.g. "may face scrutiny") that the summary does not mention; if the summary is \
+thin, say so briefly.
 - For a ranked list, give for each item: rank, company, date, headline, 1-2 sentences of CONTEXT \
 explaining why it matters to the firm (grounded in the summary/signals), and the URL.
 - Be concise. If an article's summary is thin, say what is and isn't known.
 Available companies (examples): {companies}"""
+
+
+def _md(text):
+    """Streamlit renders $...$ as LaTeX; escape dollar signs so '$6 billion' shows correctly."""
+    return (text or "").replace("$", "\\$")
 
 
 def run_chat_turn(client, model, store, history, user_msg, max_steps=4, usage=None):
@@ -569,7 +581,7 @@ def main():
     st.session_state.setdefault("messages", [])
     for m in st.session_state.messages:
         with st.chat_message(m["role"]):
-            st.markdown(m["content"])
+            st.markdown(_md(m["content"]))
 
     if prompt := st.chat_input("Ask about the news..."):
         with st.chat_message("user"):
@@ -578,7 +590,7 @@ def main():
             with st.spinner("Searching the news..."):
                 answer, log = run_chat_turn(llm, MODELS[label], store,
                                             st.session_state.messages, prompt)
-            st.markdown(answer)
+            st.markdown(_md(answer))
             if show_tools and log:
                 with st.expander("Tool calls"):
                     st.json(log)
