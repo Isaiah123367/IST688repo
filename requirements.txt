@@ -3,8 +3,4 @@ openai
 anthropic
 chromadb
 beautifulsoup4
-pysqlite3-binarypandas
-numpy
-chromadb
-openai
 pysqlite3-binary
